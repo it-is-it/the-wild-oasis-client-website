@@ -6,6 +6,7 @@ const josefin = Josefin_Sans({
   display: "swap",
 });
 
+import "react-day-picker/dist/style.css";
 import "@/app/_styles/globals.css";
 import { ReservationProvider } from "./_components/ReservationContext";
 

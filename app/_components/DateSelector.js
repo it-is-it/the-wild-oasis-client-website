@@ -1,6 +1,11 @@
 "use client";
 
-import { isWithinInterval } from "date-fns";
+import {
+  differenceInDays,
+  isPast,
+  isSameDay,
+  isWithinInterval,
+} from "date-fns";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { useReservation } from "./ReservationContext";
@@ -15,25 +20,25 @@ function isAlreadyBooked(range, datesArr) {
   );
 }
 
-function DateSelector({ settings, bookedDates, cabin }) {
+function DateSelector({ settings, cabin, bookedDates }) {
   const { range, setRange, resetRange } = useReservation();
 
-  // CHANGE
-  const regularPrice = 23;
-  const discount = 23;
-  const numNights = 23;
-  const cabinPrice = 23;
+  const displayRange = isAlreadyBooked(range, bookedDates) ? {} : range;
 
-  // SETTINGS
+  const { regularPrice, discount } = cabin;
+  const numNights = differenceInDays(displayRange.to, displayRange.from);
+  const cabinPrice = numNights * (regularPrice - discount);
+
   const { minBookingLength, maxBookingLength } = settings;
 
   return (
-    <div className="ml-8 flex flex-col justify-between">
+    <div className="flex flex-col justify-between">
       <DayPicker
-        className="pt-12 place-self-center"
+        className="pt-12 px-5 xl:px-8 place-self-center bg-primary-900 text-primary-200 min-h-[410px]  [&_.rdp-caption_label]:text-base md:[&_.rdp-caption_label]:text-lg   [&_.rdp-caption]:bg-accent-500 [&_.rdp-caption]:rounded-lg [&_.rdp-caption]:p-2 [&_.rdp-caption_label]:text-primary-900 [&_.rdp-caption_label]:font-bold [&_.rdp-nav_button]:text-primary-200   
+         "
         mode="range"
         onSelect={setRange}
-        selected={range}
+        selected={displayRange}
         min={minBookingLength + 1}
         max={maxBookingLength}
         fromMonth={new Date()}
@@ -42,6 +47,28 @@ function DateSelector({ settings, bookedDates, cabin }) {
         captionLayout="dropdown"
         numberOfMonths={2}
         styles={{ months: { display: "flex", flexWrap: "nowrap" } }}
+        modifiersClassNames={{
+          selected: "bg-accent-500 text-primary-900 rounded-full outline-none",
+          range_start:
+            "bg-accent-500 text-primary-900 rounded-r-md outline-none",
+          range_end: "bg-accent-500 text-primary-900 rounded-l-md outline-none",
+          range_middle:
+            "bg-accent-500 text-primary-200 rounded-none",
+          disabled: "text-primary-700 opacity-70",
+          outside: "text-primary-700 opacity-70",
+          today: "text-accent-200 font-semibold",
+        }}
+        disabled={(curDate) => {
+          if (isPast(curDate)) return true;
+          if (bookedDates.some((date) => isSameDay(date, curDate))) return true;
+          if (displayRange.from && !displayRange.to) {
+            const diff = Math.ceil(
+              (curDate - displayRange.from) / (1000 * 60 * 60 * 24)
+            );
+            if (diff < minBookingLength || diff > maxBookingLength) return true;
+          }
+          return false;
+        }}
       />
 
       <div className="flex items-center justify-between px-8 bg-accent-500 text-primary-800 h-[72px]">
